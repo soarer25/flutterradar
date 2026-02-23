@@ -63,9 +63,9 @@ class RadarPainter extends CustomPainter {
     canvas.drawCircle(center, radius, Paint()..color = Colors.black);
 
     // Grids & spokes (unchanged)
-    final gridPaint = Paint()..color = Colors.green.withOpacity(0.3)..style = PaintingStyle.stroke..strokeWidth = 1;
+    final gridPaint = Paint()..color = Colors.green.withValues(alpha: 0.3)..style = PaintingStyle.stroke..strokeWidth = 1;
     for (int i = 1; i <= 5; i++) canvas.drawCircle(center, radius * i / 5, gridPaint);
-    final spokePaint = Paint()..color = Colors.green.withOpacity(0.2)..strokeWidth = 1;
+    final spokePaint = Paint()..color = Colors.green.withValues(alpha: 0.2)..strokeWidth = 1;
     for (int i = 0; i < 12; i++) {
       final angle = 2 * math.pi * i / 12;
       canvas.drawLine(center, Offset(center.dx + radius * math.cos(angle), center.dy + radius * math.sin(angle)), spokePaint);
@@ -82,7 +82,7 @@ class RadarPainter extends CustomPainter {
       final opacity = (1.0 - normalizedDist) * 0.3;
       if (opacity > 0.01) {
         final paint = Paint()
-          ..color = Colors.green.withOpacity(opacity)
+          ..color = Colors.green.withValues(alpha: opacity)
           ..style = PaintingStyle.fill;
         canvas.drawPath(
           Path()
@@ -97,7 +97,7 @@ class RadarPainter extends CustomPainter {
     // Bright ray
     final rayRect = Rect.fromCircle(center: center, radius: radius);
     canvas.drawPath(Path()..addArc(rayRect, sweepAngle - 0.1, 0.2), Paint()
-      ..color = Colors.limeAccent.withOpacity(0.8)
+      ..color = Colors.limeAccent.withValues(alpha: 0.8)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2));
 
     // Targets (unchanged)
@@ -106,8 +106,8 @@ class RadarPainter extends CustomPainter {
       final normAngle = (target.angle * math.pi / 180) % (2 * math.pi);
       final pos = Offset(center.dx + radius * target.distance * math.cos(normAngle), center.dy + radius * target.distance * math.sin(normAngle));
       final diff = (normAngle - sweepAngle).abs() % (2 * math.pi);
-      final intensity = (1 - math.min(diff, 2 * math.pi - diff) / (math.pi / 6)).clamp(0.0, 1.0);
-      targetPaint.color = target.color.withOpacity(0.8 * intensity);
+      final intensity = (1 - math.min(diff, 2 * math.pi - diff) / (math.pi / 6)).clamp(0.1, 1.0);
+      targetPaint.color = target.color.withValues(alpha: 0.8 * intensity);
       canvas.drawCircle(pos, 4 + intensity * 3, targetPaint);
     }
   }

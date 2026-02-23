@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'radar_scope.dart';  // Your radar_scope.dart here
@@ -23,7 +22,6 @@ class RadarHome extends StatefulWidget {
 class _RadarHomeState extends State<RadarHome> {
   final List<RadarTarget> _targets = [];
   final Random _rng = Random();
-  Timer? _fadeTimer;
 
   void _addRandomTarget() {
     setState(() {
@@ -32,29 +30,12 @@ class _RadarHomeState extends State<RadarHome> {
         distance: 0.2 + _rng.nextDouble() * 0.8,
         color: _rng.nextBool() ? Colors.yellow : (_rng.nextBool() ? Colors.red : Colors.cyan),
       ));
-      if (_targets.length > 20) _targets.removeAt(0);  // Limit
+      if (_targets.length > 20) _targets.removeAt(0);
     });
-    _scheduleFade();
   }
 
   void _clearTargets() {
     setState(() => _targets.clear());
-    _fadeTimer?.cancel();
-  }
-
-  void _scheduleFade() {
-    _fadeTimer?.cancel();
-    _fadeTimer = Timer(const Duration(seconds: 20), () {
-      setState(() {
-        _targets.removeWhere((t) => _rng.nextBool());  // Randomly fade half
-        if (_targets.isNotEmpty) _scheduleFade();  // Reschedule if any left
-      });
-    });
-  }
-
-  @override void dispose() {
-    _fadeTimer?.cancel();
-    super.dispose();
   }
 
   @override Widget build(BuildContext context) => Scaffold(
@@ -76,7 +57,7 @@ class _RadarHomeState extends State<RadarHome> {
               targets: _targets,
             ),
             const SizedBox(height: 24),
-            Text('${_targets.length} active targets (auto-fade in 20s)', style: Theme.of(context).textTheme.titleMedium),
+            Text('${_targets.length} active targets', style: Theme.of(context).textTheme.titleMedium),
           ],
         ),
       ),
