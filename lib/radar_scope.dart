@@ -26,14 +26,12 @@ class RadarScope extends StatefulWidget {
 class _RadarScopeState extends State<RadarScope> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _sweepAnimation;
-  late Animation<double> _trailAnimation;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(duration: widget.sweepDuration, vsync: this)..repeat();
     _sweepAnimation = Tween(begin: 0.0, end: 2 * math.pi).animate(CurvedAnimation(parent: _controller, curve: Curves.linear));
-    _trailAnimation = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.8, curve: Curves.easeOut)));
   }
 
   @override
@@ -45,16 +43,16 @@ class _RadarScopeState extends State<RadarScope> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     return SizedBox(width: widget.size, height: widget.size, child: AnimatedBuilder(
-      animation: Listenable.merge([_sweepAnimation, _trailAnimation]),
-      builder: (context, child) => CustomPaint(size: Size.square(widget.size), painter: RadarPainter(_sweepAnimation.value, _trailAnimation.value, widget.targets)),
+      animation: _sweepAnimation,
+      builder: (context, child) => CustomPaint(size: Size.square(widget.size), painter: RadarPainter(_sweepAnimation.value, widget.targets)),
     ));
   }
 }
 
 class RadarPainter extends CustomPainter {
-  final double sweepAngle, trailDecay;
+  final double sweepAngle;
   final List<RadarTarget> targets;
-  RadarPainter(this.sweepAngle, this.trailDecay, this.targets);
+  RadarPainter(this.sweepAngle, this.targets);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -74,15 +72,27 @@ class RadarPainter extends CustomPainter {
     }
     canvas.drawCircle(center, 4, Paint()..color = Colors.green);
 
-    // Fading trail
-    final trailRect = Rect.fromCircle(center: center, radius: radius);
-    final trailStops = [0.0, 0.05, 0.1, 0.3, 0.5, 0.7, 1.0];
-    canvas.drawCircle(center, radius, Paint()
-      ..shader = SweepGradient(
-        colors: [Colors.transparent, Colors.transparent, Colors.transparent, Colors.green.withOpacity(0.05 * trailDecay), Colors.green.withOpacity(0.1 * trailDecay), Colors.green.withOpacity(0.2 * trailDecay), Colors.green.withOpacity(0.3 * trailDecay)],
-        stops: trailStops,
-        transform: GradientRotation(sweepAngle),
-      ).createShader(trailRect));
+    // Fading trail - draw filled wedge segments
+    final trailLength = 2 * math.pi; // Full circle coverage
+    final segments = 60;
+    final segmentSize = trailLength / segments;
+    for (int i = 0; i < segments; i++) {
+      final segmentAngle = sweepAngle - (segmentSize * i);
+      final normalizedDist = i / segments.toDouble();
+      final opacity = (1.0 - normalizedDist) * 0.3;
+      if (opacity > 0.01) {
+        final paint = Paint()
+          ..color = Colors.green.withOpacity(opacity)
+          ..style = PaintingStyle.fill;
+        canvas.drawPath(
+          Path()
+            ..moveTo(center.dx, center.dy)
+            ..arcTo(Rect.fromCircle(center: center, radius: radius), segmentAngle, segmentSize, false)
+            ..close(),
+          paint,
+        );
+      }
+    }
 
     // Bright ray
     final rayRect = Rect.fromCircle(center: center, radius: radius);
@@ -103,5 +113,5 @@ class RadarPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant RadarPainter old) => old.sweepAngle != sweepAngle || old.trailDecay != trailDecay || old.targets != targets;
+  bool shouldRepaint(covariant RadarPainter old) => old.sweepAngle != sweepAngle || old.targets != targets;
 }
